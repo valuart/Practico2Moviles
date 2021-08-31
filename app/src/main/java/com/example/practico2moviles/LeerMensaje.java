@@ -23,41 +23,43 @@ public class LeerMensaje extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Thread th = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                msjRecibido = Uri.parse("content://sms");
+                contenedor = getContentResolver();
 
-        msjRecibido = Uri.parse("content://sms");
-        contenedor = getContentResolver();
+                Log.d("Mensaje","Servicio Iniciado");
 
-        Log.d("Mensaje","Servicio Iniciado");
+                while (true) {
+                    Cursor cursor = contenedor.query(msjRecibido,null,null,null,null);
 
 
-        while (true) {
-            mostrarMensajes();
-            try {
-                Thread.sleep(9000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return super.onStartCommand(intent, flags, startId);
+                    // Si no hay mensajes
+                    if(cursor.getCount() == 0) Log.d("Mensaje", "No hay Mensajes");
+
+                    // Si hay mensajes, muestra la info de cada mensaje
+                    while (cursor.moveToNext() && cursor.getPosition() < 5) {
+                        Log.d("Mensaje", " "+
+                                "\n         Remitente: " + cursor.getString(2) +
+                                "\n         Fecha: " + cursor.getString(4) +
+                                "\n         Mensaje: " + cursor.getString(12));
+                    }
+                        try {
+                            Thread.sleep(9000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            break;
+
+                }
+                cursor.close();
             }
         }
-    }
+    });
+        th.start();
+        return START_STICKY;
+}
 
-    private void mostrarMensajes() {
-        Cursor cursor = contenedor.query(msjRecibido,null,null,null,null);
-
-
-        // Si no hay mensajes
-        if(cursor.getCount() == 0) Log.d("Mensaje", "No hay Mensajes");
-
-        // Si hay mensajes, muestra la info de cada mensaje
-        while (cursor.moveToNext() && cursor.getPosition() < 5) {
-            Log.d("Mensaje", " "+
-                    "\n         Remitente: " + cursor.getString(2) +
-                    "\nFecha de recepción: " + cursor.getString(4) +
-                    "\n           Mensaje: " + cursor.getString(12));
-        }
-
-        cursor.close();
-    }
 
     @Override
     public void onDestroy() {
